@@ -76,4 +76,3 @@ def recognize_face(image, database, threshold=0.7):
     if min_dist > threshold:
         return "Unknown", min_dist
     return identity, min_dist
-print(123)
