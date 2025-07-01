@@ -39,7 +39,7 @@ cap = cv2.VideoCapture(0)
 
 recognized_name = None
 start_time = None
-required_duration = 3  # 秒
+
 final_frame = None  # 保留最後畫面用於 unknown 截圖
 
 while True:
@@ -51,6 +51,7 @@ while True:
     final_frame = frame.copy()  # 儲存目前畫面
 
     if name not in ["No face"]:
+        current_required = 10 if name == "Unknown" else 3
         if recognized_name == name:
             elapsed = time.time() - start_time
             if name == "Unknown":
@@ -59,8 +60,8 @@ while True:
             else:
                 label = f"✅ {name} my famil detected {elapsed:.1f} s"
                 color = (0, 255, 0)
-            if elapsed >= required_duration:
-                print(f"🎉 {name} 持續存在 {required_duration} 秒，自動關閉攝影機")
+            if elapsed >= current_required:
+                print(f"🎉 {name} 持續存在 {current_required} 秒，自動關閉攝影機")
                 log_access(name)
 
                 # 如果是 unknown，儲存截圖
