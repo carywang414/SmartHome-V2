@@ -1,11 +1,40 @@
 import cv2
 import time
 import os
+import numpy as np
 from datetime import datetime
 from openpyxl import Workbook, load_workbook
-from face_recognition import build_white_list_embeddings, recognize_face
 
-# === 初始化資料夾與 Excel ===
+# === 載入儲存好的人臉向量資料庫 ===
+def load_face_database(data_folder='facedata'):
+    database = {}
+    for filename in os.listdir(data_folder):
+        if filename.endswith('.npy'):
+            name = os.path.splitext(filename)[0]
+            vector = np.load(os.path.join(data_folder, filename))
+            database[name] = vector
+    return database
+
+# === 臉部辨識（比對向量）===
+from face_recognition import extract_face, get_embedding
+
+def recognize_face(image, database, threshold=0.7):
+    face = extract_face(image)
+    if face is None:
+        return "No face", None
+    embedding = get_embedding(face)
+    min_dist = float('inf')
+    identity = "Unknown"
+    for name, db_emb in database.items():
+        dist = np.linalg.norm(embedding - db_emb)
+        if dist < min_dist:
+            min_dist = dist
+            identity = name
+    if min_dist > threshold:
+        return "Unknown", min_dist
+    return identity, min_dist
+
+# === 訪問紀錄 Excel 初始化 ===
 history_folder = "history"
 record_file = os.path.join(history_folder, "access_log.xlsx")
 os.makedirs(history_folder, exist_ok=True)
@@ -26,12 +55,12 @@ def log_access(name):
     ws.append([date_str, time_str, name])
     wb.save(record_file)
 
-# === 建立白名單資料庫 ===
-print("🔍 建立允許通行的 embedding 資料庫...")
-database = build_white_list_embeddings('face')
+# === 主程式 ===
+print("🔍 載入人臉向量資料庫...")
+database = load_face_database('facedata')
 
 if not database:
-    print("❌ 沒有找到有效的人臉資料，請將照片放入 face/ 資料夾")
+    print("❌ 沒有找到任何 .npy 向量檔案，請先執行預處理程式！")
     exit()
 
 print("✅ 資料庫載入完成，啟動攝影機辨識中...")
@@ -39,7 +68,6 @@ cap = cv2.VideoCapture(0)
 
 recognized_name = None
 start_time = None
-
 final_frame = None  # 保留最後畫面用於 unknown 截圖
 
 while True:
@@ -47,11 +75,14 @@ while True:
     if not ret:
         break
 
+    frame = cv2.flip(frame, 1)  # ✅ 左右鏡像修正
+    final_frame = frame.copy()
+
     name, dist = recognize_face(frame, database)
-    final_frame = frame.copy()  # 儲存目前畫面
 
     if name not in ["No face"]:
         current_required = 10 if name == "Unknown" else 3
+
         if recognized_name == name:
             elapsed = time.time() - start_time
             if name == "Unknown":
@@ -60,17 +91,16 @@ while True:
             else:
                 label = f"✅ {name} my famil detected {elapsed:.1f} s"
                 color = (0, 255, 0)
+
             if elapsed >= current_required:
                 print(f"🎉 {name} 持續存在 {current_required} 秒，自動關閉攝影機")
                 log_access(name)
 
-                # 如果是 unknown，儲存截圖
                 if name == "Unknown":
                     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                     img_path = os.path.join(history_folder, f"unknown_{timestamp}.png")
                     cv2.imwrite(img_path, final_frame)
                     print(f"📸 Unknown 截圖已儲存：{img_path}")
-
                 break
         else:
             recognized_name = name
@@ -82,7 +112,6 @@ while True:
                 label = f"✅ {name} 允許進入（開始計時）"
                 color = (0, 255, 0)
     else:
-        # 沒臉重置計時
         recognized_name = None
         start_time = None
         label = "no face"
