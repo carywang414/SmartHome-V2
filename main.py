@@ -6,6 +6,7 @@ from datetime import datetime
 from openpyxl import Workbook, load_workbook
 
 # === 載入儲存好的人臉向量資料庫 ===
+
 def load_face_database(data_folder='facedata'):
     database = {}
     for filename in os.listdir(data_folder):
