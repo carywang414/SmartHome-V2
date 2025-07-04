@@ -18,9 +18,9 @@ def generate_facedata():
             if encodings:
                 encoding = encodings[0]
                 np.save(os.path.join(FACEDATA_DIR, name + ".npy"), encoding)
-                print(f"✅ 儲存 {name} 向量成功")
+                print(f" 儲存 {name} 向量成功")
             else:
-                print(f"⚠️ 無法從 {filename} 擷取人臉向量")
+                print(f" 無法從 {filename} 擷取人臉向量")
 
 if __name__ == "__main__":
     generate_facedata()
