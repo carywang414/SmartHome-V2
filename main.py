@@ -17,7 +17,7 @@ def load_face_database(data_folder='facedata'):
     return database
 
 # === 臉部辨識（比對向量）===
-from face_recognition import extract_face, get_embedding,recognize_face
+from face_recognition1 import extract_face, get_embedding,recognize_face
 
 # === 訪問紀錄 Excel 初始化 ===
 history_folder = "history"

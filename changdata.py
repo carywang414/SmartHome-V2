@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from face_recognition import extract_face, get_embedding
+from face_recognition1 import extract_face, get_embedding
 import cv2
 
 face_folder = 'face'
