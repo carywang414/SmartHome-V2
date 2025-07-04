@@ -13,7 +13,7 @@ for filename in os.listdir(face_folder):
     if filename.lower().endswith(('.jpg', '.png', '.jpeg')):
         path = os.path.join(face_folder, filename)
         image = cv2.imread(path)
-        face = extract_face(image)
+        face, _ = extract_face(image)  # ✅ 修正：取得裁切後的臉部圖像
         if face is not None:
             embedding = get_embedding(face)
             name = os.path.splitext(filename)[0].split('_')[0]

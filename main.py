@@ -17,23 +17,7 @@ def load_face_database(data_folder='facedata'):
     return database
 
 # === 臉部辨識（比對向量）===
-from face_recognition import extract_face, get_embedding
-
-def recognize_face(image, database, threshold=0.7):
-    face = extract_face(image)
-    if face is None:
-        return "No face", None
-    embedding = get_embedding(face)
-    min_dist = float('inf')
-    identity = "Unknown"
-    for name, db_emb in database.items():
-        dist = np.linalg.norm(embedding - db_emb)
-        if dist < min_dist:
-            min_dist = dist
-            identity = name
-    if min_dist > threshold:
-        return "Unknown", min_dist
-    return identity, min_dist
+from face_recognition import extract_face, get_embedding,recognize_face
 
 # === 訪問紀錄 Excel 初始化 ===
 history_folder = "history"
@@ -76,10 +60,11 @@ while True:
     if not ret:
         break
 
-    frame = cv2.flip(frame, 1)  # ✅ 左右鏡像修正
+    frame = cv2.flip(frame, 1)
     final_frame = frame.copy()
 
-    name, dist = recognize_face(frame, database)
+    # 🔄 接收第三個回傳值（有框）
+    name, dist ,frame_with_box = recognize_face(frame, database)
 
     if name not in ["No face"]:
         current_required = 10 if name == "Unknown" else 3
@@ -118,8 +103,9 @@ while True:
         label = "no face"
         color = (128, 128, 128)
 
-    cv2.putText(frame, label, (30, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
-    cv2.imshow("Access Control System", frame)
+    # ✅ 在畫框的畫面上加上文字
+    cv2.putText(frame_with_box, label, (30, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
+    cv2.imshow("Access Control System", frame_with_box)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         print("👋 手動結束辨識")
